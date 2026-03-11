@@ -3,54 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document Manager</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: 'Kantumruy Pro', sans-serif; background-color: #efeff4; padding: 15px; color: #333; }
-        .container { background: white; padding: 20px; border-radius: 15px; shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #0088cc; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
-        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 15px; background-color: #0088cc; color: white; border: none; border-radius: 10px; margin-top: 20px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        button:active { background-color: #006699; }
+        body { font-family: sans-serif; background-color: #f4f4f9; padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h3 { color: #0088cc; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; background: #0088cc; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .info-step { font-size: 12px; color: #666; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>📝 បញ្ចូលព័ត៌មាន</h2>
-        <label>កាលបរិច្ឆេត (ថ្ងៃ-ខែ-ឆ្នាំ)</label>
-        <input type="text" id="doc_date" placeholder="ឧ. 12-03-2025">
+    <div class="card">
+        <h3>📝 បញ្ចូលព័ត៌មានឯកសារ</h3>
+        <input type="text" id="date" placeholder="ថ្ងៃ-ខែ-ឆ្នាំ (ឧ. 12-03-2025)">
+        <input type="text" id="num" placeholder="លេខឯកសារ (ឧ. 21/25)">
+        <input type="text" id="name" placeholder="ឈ្មោះឯកសារ">
+        <input type="text" id="desc" placeholder="ការពិពណ៌នា">
         
-        <label>លេខឯកសារ</label>
-        <input type="text" id="doc_num" placeholder="ឧ. 12/25">
-        
-        <label>ឈ្មោះឯកសារ</label>
-        <input type="text" id="doc_name" placeholder="ឧ. លិខិតផ្ទេរសិទ្ធិ...">
-        
-        <label>ការពិពណ៌នា</label>
-        <input type="text" id="desc" placeholder="ព័ត៌មានបន្ថែម...">
-        
-        <button onclick="submitForm()">រក្សាទុកទិន្នន័យ</button>
+        <button onclick="sendDataToBot()">រក្សាទុក និងផ្ញើ File 📎</button>
+        <p class="info-step">ជំហានបន្ទាប់៖ បន្ទាប់ពីចុចប៊ូតុងនេះ សូមផ្ញើឯកសារ PDF ទៅកាន់ Bot</p>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // បើកឱ្យពេញអេក្រង់
-
-        function submitForm() {
+        tg.expand();
+        function sendDataToBot() {
             const data = {
-                date: document.getElementById('doc_date').value,
-                num: document.getElementById('doc_num').value,
-                name: document.getElementById('doc_name').value,
+                date: document.getElementById('date').value,
+                num: document.getElementById('num').value,
+                name: document.getElementById('name').value,
                 desc: document.getElementById('desc').value
             };
-            
-            if(!data.name) {
-                alert("សូមបំពេញឈ្មោះឯកសារ!");
-                return;
-            }
-
-            // បញ្ជូនទិន្នន័យទៅកាន់ Bot
+            if(!data.name) return alert("សូមបំពេញឈ្មោះឯកសារ!");
             tg.sendData(JSON.stringify(data));
         }
     </script>
