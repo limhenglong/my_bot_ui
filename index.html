@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Manager</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: 'Kantumruy Pro', sans-serif; background-color: #efeff4; padding: 15px; color: #333; }
+        .container { background: white; padding: 20px; border-radius: 15px; shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #0088cc; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; background-color: #0088cc; color: white; border: none; border-radius: 10px; margin-top: 20px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        button:active { background-color: #006699; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📝 បញ្ចូលព័ត៌មាន</h2>
+        <label>កាលបរិច្ឆេត (ថ្ងៃ-ខែ-ឆ្នាំ)</label>
+        <input type="text" id="doc_date" placeholder="ឧ. 12-03-2025">
+        
+        <label>លេខឯកសារ</label>
+        <input type="text" id="doc_num" placeholder="ឧ. 12/25">
+        
+        <label>ឈ្មោះឯកសារ</label>
+        <input type="text" id="doc_name" placeholder="ឧ. លិខិតផ្ទេរសិទ្ធិ...">
+        
+        <label>ការពិពណ៌នា</label>
+        <input type="text" id="desc" placeholder="ព័ត៌មានបន្ថែម...">
+        
+        <button onclick="submitForm()">រក្សាទុកទិន្នន័យ</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // បើកឱ្យពេញអេក្រង់
+
+        function submitForm() {
+            const data = {
+                date: document.getElementById('doc_date').value,
+                num: document.getElementById('doc_num').value,
+                name: document.getElementById('doc_name').value,
+                desc: document.getElementById('desc').value
+            };
+            
+            if(!data.name) {
+                alert("សូមបំពេញឈ្មោះឯកសារ!");
+                return;
+            }
+
+            // បញ្ជូនទិន្នន័យទៅកាន់ Bot
+            tg.sendData(JSON.stringify(data));
+        }
+    </script>
+</body>
+</html>
