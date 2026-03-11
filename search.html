@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ស្វែងរកឯកសារ</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kantumruy Pro', sans-serif; background-color: var(--tg-theme-secondary-bg-color, #f4f4f9); color: var(--tg-theme-text-color, #333); padding: 15px; margin: 0; }
+        .container { background-color: var(--tg-theme-bg-color, white); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h3 { text-align: center; color: #28a745; margin-top: 0; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; }
+        input { width: 100%; padding: 12px; border: 1px solid var(--tg-theme-hint-color, #ddd); border-radius: 8px; box-sizing: border-box; font-family: 'Kantumruy Pro', sans-serif; background-color: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #333); outline: none; }
+        input:focus { border-color: #28a745; }
+        button { width: 100%; padding: 14px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; font-family: 'Kantumruy Pro', sans-serif; margin-top: 10px; }
+        button:active { opacity: 0.8; }
+        .note { font-size: 12px; text-align: center; color: var(--tg-theme-hint-color, #666); margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>🔍 ស្វែងរកឯកសារ</h3>
+        <p class="note" style="margin-top:0;">បំពេញចន្លោះណាមួយក៏បាន (មិនបាច់បំពេញទាំងអស់ទេ)</p>
+        
+        <div class="form-group"><label>កាលបរិច្ឆេត</label><input type="text" id="date" placeholder="ឧ. 12-03-2026"></div>
+        <div class="form-group"><label>លេខឯកសារ</label><input type="text" id="num" placeholder="ឧ. ២១/២៦"></div>
+        <div class="form-group"><label>ឈ្មោះឯកសារ</label><input type="text" id="name" placeholder="ពាក្យគន្លឹះ..."></div>
+        <div class="form-group"><label>ការពិពណ៌នា</label><input type="text" id="desc" placeholder="ពាក្យគន្លឹះ..."></div>
+        
+        <button onclick="sendSearchToBot()">ស្វែងរកឥឡូវនេះ</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        function sendSearchToBot() {
+            const data = {
+                action: "search", // បន្ថែមពាក្យនេះដើម្បីប្រាប់ Bot ថាវាជាការស្វែងរក
+                date: document.getElementById('date').value.trim(),
+                num: document.getElementById('num').value.trim(),
+                name: document.getElementById('name').value.trim(),
+                desc: document.getElementById('desc').value.trim()
+            };
+
+            if (!data.date && !data.num && !data.name && !data.desc) {
+                tg.showAlert("សូមវាយបញ្ចូលពាក្យគន្លឹះយ៉ាងហោចណាស់មួយ ដើម្បីស្វែងរក!");
+                return;
+            }
+
+            tg.sendData(JSON.stringify(data));
+        }
+    </script>
+</body>
+</html>
