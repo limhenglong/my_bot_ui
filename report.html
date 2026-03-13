@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRP11 Report Center</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --primary-color: #2481cc;
+            --bg-color: #efeff4;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h3 { margin-bottom: 20px; color: var(--primary-color); }
+
+        .menu-container {
+            width: 100%;
+            max-width: 400px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .report-btn {
+            display: flex;
+            align-items: center;
+            padding: 18px;
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            text-align: left;
+        }
+
+        .report-btn:active {
+            transform: scale(0.98);
+            background-color: #e5e5ea;
+        }
+
+        .icon {
+            margin-right: 15px;
+            font-size: 24px;
+            width: 35px;
+            text-align: center;
+        }
+
+        /* ពណ៌តាមប្រភេទប៊ូតុង */
+        .gtas { color: #3498db; }
+        .income { color: #2ecc71; }
+        .docs { color: #f1c40f; }
+        .users { color: #e74c3c; }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #8e8e93;
+        }
+    </style>
+</head>
+<body>
+
+    <h3>📊 មជ្ឈមណ្ឌលរបាយការណ៍</h3>
+
+    <div class="menu-container">
+        <button class="report-btn" onclick="sendAction('gtas_report')">
+            <span class="icon gtas">📈</span> 1. របាយការណ៍ GTAS
+        </button>
+
+        <button class="report-btn" onclick="sendAction('income_report')">
+            <span class="icon income">💰</span> 2. ស្ថានភាពចំណូល
+        </button>
+
+        <button class="report-btn" onclick="sendAction('docs_report')">
+            <span class="icon docs">📂</span> 3. ឯកសារយោង
+        </button>
+
+        <button class="report-btn" onclick="sendAction('users_report')">
+            <span class="icon users">👥</span> 4. គ្រប់គ្រងអ្នកប្រើប្រាស់
+        </button>
+    </div>
+
+    <div class="footer">SRP11 Management System v2.0</div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // ពង្រីកឱ្យពេញអេក្រង់ទូរស័ព្ទ
+
+        function sendAction(actionName) {
+            // បញ្ជូនទិន្នន័យទៅកាន់ Bot (Python)
+            tg.sendData(actionName);
+            
+            // បង្ហាញការជូនដំណឹងខ្លី (Haptic Feedback)
+            tg.HapticFeedback.impactOccurred('medium');
+            
+            // បិទផ្ទាំង Mini App
+            tg.close();
+        }
+    </script>
+</body>
+</html>
