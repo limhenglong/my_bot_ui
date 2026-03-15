@@ -8,27 +8,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.2s; }
-        .glass-card:active { transform: scale(0.98); }
+        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .pending-border { border-left: 4px solid #f59e0b; }
         .group-border { border-left: 4px solid #a855f7; }
         .search-box { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px); }
         .search-box:focus { border-color: #3b82f6; outline: none; }
         .tab-active { background: #2563eb; color: white; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39); }
-        .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); }
     </style>
 </head>
 <body class="p-4 pb-28 text-sm">
     <h2 class="text-xl font-bold mb-4 text-center text-blue-400">🛡️ មជ្ឈមណ្ឌលគ្រប់គ្រង SRP11</h2>
     
     <div class="mb-4">
-        <input type="text" id="searchInput" onkeyup="filterContent()" placeholder="🔍 ស្វែងរកឈ្មោះ, ID ឬ ក្រុម..." 
+        <input type="text" id="searchInput" onkeyup="filterContent()" placeholder="🔍 ស្វែងរកឈ្មោះ ឬ ID..." 
                class="w-full search-box text-white rounded-xl p-3 transition-colors placeholder-gray-400">
     </div>
 
     <div class="flex mb-6 bg-gray-800 bg-opacity-50 rounded-xl p-1 border border-gray-700">
         <button onclick="switchTab('users')" id="tabUsers" class="w-1/2 py-2.5 rounded-lg transition-all tab-active font-bold">👤 អ្នកប្រើប្រាស់</button>
-        <button onclick="switchTab('groups')" id="tabGroups" class="w-1/2 py-2.5 rounded-lg transition-all text-gray-400 font-bold">🏰 ក្រុម (Groups)</button>
+        <button onclick="switchTab('groups')" id="tabGroups" class="w-1/2 py-2.5 rounded-lg transition-all text-gray-400 font-bold">🏰 Groups</button>
     </div>
 
     <div id="usersContainer" class="space-y-4"></div>
@@ -47,7 +45,6 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // ១. ទាញទិន្នន័យពី URL ដែលបាញ់មកពី Python
         const urlParams = new URLSearchParams(window.location.search);
         let rawData = {};
         try {
@@ -55,13 +52,12 @@
             if (dataStr) {
                 rawData = JSON.parse(decodeURIComponent(dataStr));
             }
-        } catch(e) { console.error("JSON Parse Error:", e); }
+        } catch(e) { console.error("JSON Error:", e); }
 
         let users = rawData.users || [];
         let groups = rawData.groups || [];
         let currentTab = 'users';
 
-        // តម្រៀបអ្នក Pending ឱ្យមកលើគេជានិច្ច
         users.sort((a, b) => (a.status === 'pending' ? -1 : 1));
 
         function switchTab(tab) {
@@ -92,14 +88,7 @@
 
             if(currentTab === 'users') {
                 uCon.innerHTML = '';
-                const filteredUsers = users.filter(u => `${u.name}${u.id}`.toLowerCase().includes(f));
-                
-                if (filteredUsers.length === 0) {
-                    uCon.innerHTML = '<div class="text-center text-gray-500 py-10 italic">រកមិនឃើញអ្នកប្រើប្រាស់ទេ។</div>';
-                    return;
-                }
-
-                filteredUsers.forEach((u, i) => {
+                users.filter(u => `${u.name}${u.id}`.toLowerCase().includes(f)).forEach((u, i) => {
                     const card = `
                     <div class="glass-card p-4 rounded-xl ${u.status === 'pending' ? 'pending-border' : ''} mb-3">
                         <div class="flex justify-between items-center mb-3">
@@ -107,7 +96,7 @@
                                 <span class="font-bold text-blue-200 block truncate text-base">${u.name ? '@'+u.name : 'ID: '+u.id}</span>
                                 <span class="text-[11px] text-gray-500 font-mono">ID: ${u.id}</span>
                             </div>
-                            <select onchange="updateStatus(${i}, this.value)" class="bg-gray-800 text-xs rounded p-2 border border-gray-600 outline-none">
+                            <select onchange="updateStatus(${i}, this.value)" class="bg-gray-800 text-xs rounded p-2 border border-gray-600">
                                 <option value="approved" ${u.status==='approved'?'selected':''}>✅ Allow</option>
                                 <option value="pending" ${u.status==='pending'?'selected':''}>⏳ Wait</option>
                                 <option value="rejected" ${u.status==='rejected'?'selected':''}>❌ Block</option>
@@ -123,28 +112,24 @@
                 });
             } else {
                 gCon.innerHTML = '';
-                const filteredGroups = groups.filter(g => `${g.name}${g.id}`.toLowerCase().includes(f));
-
-                if (filteredGroups.length === 0) {
-                    gCon.innerHTML = '<div class="text-center text-gray-500 py-10 italic">មិនទាន់មាន Group ក្នុងបញ្ជីទេ។</div>';
-                    return;
-                }
-
-                filteredGroups.forEach((g) => {
-                    // បង្ហាញថ្ងៃខែចូល
+                groups.filter(g => `${g.name}${g.id}`.toLowerCase().includes(f)).forEach((g) => {
                     const dateDisplay = g.date ? g.date.split(' ')[0] : 'មិនស្គាល់';
                     const card = `
                     <div class="glass-card p-4 rounded-xl group-border mb-3">
                         <div class="flex justify-between items-start">
-                            <div class="truncate pr-2">
+                            <div class="flex-1 truncate pr-2">
                                 <span class="font-bold text-purple-300 block truncate text-base">${g.name || 'Unknown Group'}</span>
-                                <span class="text-[11px] text-gray-500 font-mono italic block">ID: ${g.id}</span>
-                                <div class="mt-2 space-y-1">
-                                    <span class="badge text-blue-300">👤 បញ្ចូលដោយ: ${g.by || 'Admin'}</span>
-                                    <span class="badge text-green-400">📅 ថ្ងៃចូល: ${dateDisplay}</span>
+                                <span class="text-[11px] text-gray-500 font-mono italic block mb-2">ID: ${g.id}</span>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="bg-blue-900 bg-opacity-30 text-blue-300 text-[10px] px-2 py-1 rounded whitespace-nowrap">
+                                        👤 ${g.by || 'Admin'}
+                                    </span>
+                                    <span class="bg-green-900 bg-opacity-30 text-green-400 text-[10px] px-2 py-1 rounded whitespace-nowrap">
+                                        📅 ${dateDisplay}
+                                    </span>
                                 </div>
                             </div>
-                            <button onclick="leaveGroup('${g.id}', '${g.name}')" class="bg-red-900 bg-opacity-40 text-red-400 border border-red-800 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 hover:text-white transition-all">
+                            <button onclick="leaveGroup('${g.id}', '${g.name}')" class="bg-red-900 bg-opacity-40 text-red-400 border border-red-800 px-4 py-2 rounded-xl text-xs font-bold active:bg-red-700">
                                 Leave
                             </button>
                         </div>
@@ -157,27 +142,13 @@
         function filterContent() { render(document.getElementById('searchInput').value); }
         function updateStatus(i, v) { users[i].status = v; }
         function upPerm(i, t, v) { users[i][t] = v ? 1 : 0; }
-
-        function saveData() {
-            tg.sendData(JSON.stringify({ action: 'update_users_miniapp', data: users }));
-            tg.close();
-        }
-
-        function exportReport() {
-            tg.sendData(JSON.stringify({ action: 'export_users_report' }));
-            tg.close();
-        }
-
+        function saveData() { tg.sendData(JSON.stringify({ action: 'update_users_miniapp', data: users })); tg.close(); }
+        function exportReport() { tg.sendData(JSON.stringify({ action: 'export_users_report' })); tg.close(); }
         function leaveGroup(id, name) {
             tg.showConfirm(`តើបងពិតជាចង់ឱ្យ Bot ចាកចេញពី Group "${name}" មែនទេ?`, (isConfirmed) => {
-                if (isConfirmed) {
-                    tg.sendData(JSON.stringify({ action: 'leave_group_miniapp', group_id: id, group_name: name }));
-                    tg.close();
-                }
+                if (isConfirmed) { tg.sendData(JSON.stringify({ action: 'leave_group_miniapp', group_id: id, group_name: name })); tg.close(); }
             });
         }
-
-        // បង្ហាញដំបូង
         render();
     </script>
 </body>
