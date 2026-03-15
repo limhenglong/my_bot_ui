@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; min-height: 100vh; }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .pending-border { border-left: 4px solid #f59e0b; }
         .group-border { border-left: 4px solid #a855f7; }
@@ -25,15 +25,15 @@
     </div>
 
     <div class="flex mb-6 bg-gray-800 bg-opacity-50 rounded-xl p-1 border border-gray-700">
-        <button onclick="switchTab('users')" id="tabUsers" class="w-1/2 py-2.5 rounded-lg transition-all tab-active">👤 អ្នកប្រើប្រាស់</button>
-        <button onclick="switchTab('groups')" id="tabGroups" class="w-1/2 py-2.5 rounded-lg transition-all text-gray-400">Groups</button>
+        <button onclick="switchTab('users')" id="tabUsers" class="w-1/2 py-2.5 rounded-lg transition-all tab-active font-bold">👤 អ្នកប្រើប្រាស់</button>
+        <button onclick="switchTab('groups')" id="tabGroups" class="w-1/2 py-2.5 rounded-lg transition-all text-gray-400 font-bold">🏰 ក្រុម (Groups)</button>
     </div>
 
     <div id="usersContainer" class="space-y-4"></div>
 
     <div id="groupsContainer" class="hidden space-y-4"></div>
 
-    <div class="fixed bottom-0 left-0 right-0 p-4 bg-gray-900 bg-opacity-90 backdrop-blur-md flex space-x-2 border-t border-gray-800">
+    <div class="fixed bottom-0 left-0 right-0 p-4 bg-gray-900 bg-opacity-90 backdrop-blur-md flex space-x-2 border-t border-gray-800 z-50">
         <button onclick="exportReport()" class="w-1/3 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm">
             📊 របាយការណ៍
         </button>
@@ -46,18 +46,24 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // ទាញទិន្នន័យពី URL
+        // ១. ចាប់យកទិន្នន័យពី URL
         const urlParams = new URLSearchParams(window.location.search);
         let rawData = {};
         try {
-            rawData = JSON.parse(decodeURIComponent(urlParams.get('data') || '{}'));
-        } catch(e) { console.error("Data error"); }
+            const dataStr = urlParams.get('data');
+            if (dataStr) {
+                rawData = JSON.parse(decodeURIComponent(dataStr));
+            }
+        } catch(e) {
+            console.error("JSON Parse Error:", e);
+        }
 
+        // ២. បំបែកទិន្នន័យជា User និង Group
         let users = rawData.users || [];
         let groups = rawData.groups || [];
         let currentTab = 'users';
 
-        // តម្រៀបអ្នក Pending ឡើងលើ
+        // តម្រៀបអ្នក Pending ឱ្យមកលើគេ
         users.sort((a, b) => (a.status === 'pending' ? -1 : 1));
 
         function switchTab(tab) {
@@ -88,9 +94,16 @@
 
             if(currentTab === 'users') {
                 uCon.innerHTML = '';
-                users.filter(u => `${u.name}${u.id}`.toLowerCase().includes(f)).forEach((u, i) => {
+                const filteredUsers = users.filter(u => `${u.name}${u.id}`.toLowerCase().includes(f));
+                
+                if (filteredUsers.length === 0) {
+                    uCon.innerHTML = '<div class="text-center text-gray-500 py-10">រកមិនឃើញអ្នកប្រើប្រាស់ទេ។</div>';
+                    return;
+                }
+
+                filteredUsers.forEach((u, i) => {
                     const card = `
-                    <div class="glass-card p-4 rounded-xl ${u.status === 'pending' ? 'pending-border' : ''}">
+                    <div class="glass-card p-4 rounded-xl ${u.status === 'pending' ? 'pending-border' : ''} mb-3">
                         <div class="flex justify-between items-center mb-3">
                             <div class="truncate pr-2">
                                 <span class="font-bold text-blue-200 block truncate">${u.name ? '@'+u.name : 'ID: '+u.id}</span>
@@ -103,25 +116,32 @@
                             </select>
                         </div>
                         <div class="flex space-x-4 text-xs pt-2 border-t border-gray-700">
-                            <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'search',this.checked)" ${u.search?'checked':''} class="w-4 h-4"> <span>ស្វែងរក</span></label>
-                            <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'report',this.checked)" ${u.report?'checked':''} class="w-4 h-4"> <span>របាយការណ៍</span></label>
-                            <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'input',this.checked)" ${u.input?'checked':''} class="w-4 h-4"> <span>បញ្ចូល</span></label>
+                            <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'search',this.checked)" ${u.search?'checked':''} class="w-4 h-4 rounded"> <span>ស្វែងរក</span></label>
+                            <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'report',this.checked)" ${u.report?'checked':''} class="w-4 h-4 rounded"> <span>របាយការណ៍</span></label>
+                            <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'input',this.checked)" ${u.input?'checked':''} class="w-4 h-4 rounded"> <span>បញ្ចូល</span></label>
                         </div>
                     </div>`;
                     uCon.innerHTML += card;
                 });
             } else {
                 gCon.innerHTML = '';
-                groups.filter(g => `${g.name}${g.id}`.toLowerCase().includes(f)).forEach((g) => {
+                const filteredGroups = groups.filter(g => `${g.name}${g.id}`.toLowerCase().includes(f));
+
+                if (filteredGroups.length === 0) {
+                    gCon.innerHTML = '<div class="text-center text-gray-500 py-10">មិនទាន់មាន Group ក្នុងបញ្ជីទេ។</div>';
+                    return;
+                }
+
+                filteredGroups.forEach((g) => {
                     const card = `
-                    <div class="glass-card p-4 rounded-xl group-border">
+                    <div class="glass-card p-4 rounded-xl group-border mb-3">
                         <div class="flex justify-between items-center">
-                            <div class="truncate">
-                                <span class="font-bold text-purple-300 block truncate">${g.name}</span>
-                                <span class="text-xs text-gray-500 font-mono">ID: ${g.id}</span>
-                                <span class="text-[10px] text-gray-400 block mt-1">Added by: ${g.by}</span>
+                            <div class="truncate pr-2">
+                                <span class="font-bold text-purple-300 block truncate">${g.name || 'Unknown Group'}</span>
+                                <span class="text-xs text-gray-500 font-mono italic">ID: ${g.id}</span>
+                                <span class="text-[10px] text-gray-400 block mt-1">Added by: ${g.by || 'Admin'}</span>
                             </div>
-                            <button onclick="leaveGroup('${g.id}', '${g.name}')" class="bg-red-900 bg-opacity-30 text-red-400 border border-red-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-800 transition-all">
+                            <button onclick="leaveGroup('${g.id}', '${g.name}')" class="bg-red-900 bg-opacity-30 text-red-400 border border-red-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-800 hover:text-white transition-all">
                                 Leave
                             </button>
                         </div>
@@ -146,12 +166,15 @@
         }
 
         function leaveGroup(id, name) {
-            if(confirm(`តើបងពិតជាចង់ឱ្យ Bot ចាកចេញពី Group "${name}" មែនទេ?`)) {
-                tg.sendData(JSON.stringify({ action: 'leave_group_miniapp', group_id: id, group_name: name }));
-                tg.close();
-            }
+            tg.showConfirm(`តើបងពិតជាចង់ឱ្យ Bot ចាកចេញពី Group "${name}" មែនទេ?`, (isConfirmed) => {
+                if (isConfirmed) {
+                    tg.sendData(JSON.stringify({ action: 'leave_group_miniapp', group_id: id, group_name: name }));
+                    tg.close();
+                }
+            });
         }
 
+        // ចាប់ផ្តើមបង្ហាញដំបូង
         render();
     </script>
 </body>
