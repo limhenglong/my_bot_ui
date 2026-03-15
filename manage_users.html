@@ -8,19 +8,21 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.2s; }
+        .glass-card:active { transform: scale(0.98); }
         .pending-border { border-left: 4px solid #f59e0b; }
         .group-border { border-left: 4px solid #a855f7; }
         .search-box { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px); }
         .search-box:focus { border-color: #3b82f6; outline: none; }
         .tab-active { background: #2563eb; color: white; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39); }
+        .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); }
     </style>
 </head>
-<body class="p-4 pb-28">
+<body class="p-4 pb-28 text-sm">
     <h2 class="text-xl font-bold mb-4 text-center text-blue-400">🛡️ មជ្ឈមណ្ឌលគ្រប់គ្រង SRP11</h2>
     
     <div class="mb-4">
-        <input type="text" id="searchInput" onkeyup="filterContent()" placeholder="🔍 ស្វែងរកឈ្មោះ ឬ ID..." 
+        <input type="text" id="searchInput" onkeyup="filterContent()" placeholder="🔍 ស្វែងរកឈ្មោះ, ID ឬ ក្រុម..." 
                class="w-full search-box text-white rounded-xl p-3 transition-colors placeholder-gray-400">
     </div>
 
@@ -30,11 +32,10 @@
     </div>
 
     <div id="usersContainer" class="space-y-4"></div>
-
     <div id="groupsContainer" class="hidden space-y-4"></div>
 
     <div class="fixed bottom-0 left-0 right-0 p-4 bg-gray-900 bg-opacity-90 backdrop-blur-md flex space-x-2 border-t border-gray-800 z-50">
-        <button onclick="exportReport()" class="w-1/3 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm">
+        <button onclick="exportReport()" class="w-1/3 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-xs">
             📊 របាយការណ៍
         </button>
         <button onclick="saveData()" class="w-2/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all">
@@ -46,7 +47,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // ១. ចាប់យកទិន្នន័យពី URL
+        // ១. ទាញទិន្នន័យពី URL ដែលបាញ់មកពី Python
         const urlParams = new URLSearchParams(window.location.search);
         let rawData = {};
         try {
@@ -54,16 +55,13 @@
             if (dataStr) {
                 rawData = JSON.parse(decodeURIComponent(dataStr));
             }
-        } catch(e) {
-            console.error("JSON Parse Error:", e);
-        }
+        } catch(e) { console.error("JSON Parse Error:", e); }
 
-        // ២. បំបែកទិន្នន័យជា User និង Group
         let users = rawData.users || [];
         let groups = rawData.groups || [];
         let currentTab = 'users';
 
-        // តម្រៀបអ្នក Pending ឱ្យមកលើគេ
+        // តម្រៀបអ្នក Pending ឱ្យមកលើគេជានិច្ច
         users.sort((a, b) => (a.status === 'pending' ? -1 : 1));
 
         function switchTab(tab) {
@@ -97,7 +95,7 @@
                 const filteredUsers = users.filter(u => `${u.name}${u.id}`.toLowerCase().includes(f));
                 
                 if (filteredUsers.length === 0) {
-                    uCon.innerHTML = '<div class="text-center text-gray-500 py-10">រកមិនឃើញអ្នកប្រើប្រាស់ទេ។</div>';
+                    uCon.innerHTML = '<div class="text-center text-gray-500 py-10 italic">រកមិនឃើញអ្នកប្រើប្រាស់ទេ។</div>';
                     return;
                 }
 
@@ -106,16 +104,16 @@
                     <div class="glass-card p-4 rounded-xl ${u.status === 'pending' ? 'pending-border' : ''} mb-3">
                         <div class="flex justify-between items-center mb-3">
                             <div class="truncate pr-2">
-                                <span class="font-bold text-blue-200 block truncate">${u.name ? '@'+u.name : 'ID: '+u.id}</span>
-                                <span class="text-xs text-gray-500 font-mono italic">ID: ${u.id}</span>
+                                <span class="font-bold text-blue-200 block truncate text-base">${u.name ? '@'+u.name : 'ID: '+u.id}</span>
+                                <span class="text-[11px] text-gray-500 font-mono">ID: ${u.id}</span>
                             </div>
-                            <select onchange="updateStatus(${i}, this.value)" class="bg-gray-800 text-sm rounded p-2 border border-gray-600 outline-none">
+                            <select onchange="updateStatus(${i}, this.value)" class="bg-gray-800 text-xs rounded p-2 border border-gray-600 outline-none">
                                 <option value="approved" ${u.status==='approved'?'selected':''}>✅ Allow</option>
                                 <option value="pending" ${u.status==='pending'?'selected':''}>⏳ Wait</option>
                                 <option value="rejected" ${u.status==='rejected'?'selected':''}>❌ Block</option>
                             </select>
                         </div>
-                        <div class="flex space-x-4 text-xs pt-2 border-t border-gray-700">
+                        <div class="flex space-x-3 text-[11px] pt-3 border-t border-gray-700">
                             <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'search',this.checked)" ${u.search?'checked':''} class="w-4 h-4 rounded"> <span>ស្វែងរក</span></label>
                             <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'report',this.checked)" ${u.report?'checked':''} class="w-4 h-4 rounded"> <span>របាយការណ៍</span></label>
                             <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'input',this.checked)" ${u.input?'checked':''} class="w-4 h-4 rounded"> <span>បញ្ចូល</span></label>
@@ -128,20 +126,25 @@
                 const filteredGroups = groups.filter(g => `${g.name}${g.id}`.toLowerCase().includes(f));
 
                 if (filteredGroups.length === 0) {
-                    gCon.innerHTML = '<div class="text-center text-gray-500 py-10">មិនទាន់មាន Group ក្នុងបញ្ជីទេ។</div>';
+                    gCon.innerHTML = '<div class="text-center text-gray-500 py-10 italic">មិនទាន់មាន Group ក្នុងបញ្ជីទេ។</div>';
                     return;
                 }
 
                 filteredGroups.forEach((g) => {
+                    // បង្ហាញថ្ងៃខែចូល
+                    const dateDisplay = g.date ? g.date.split(' ')[0] : 'មិនស្គាល់';
                     const card = `
                     <div class="glass-card p-4 rounded-xl group-border mb-3">
-                        <div class="flex justify-between items-center">
+                        <div class="flex justify-between items-start">
                             <div class="truncate pr-2">
-                                <span class="font-bold text-purple-300 block truncate">${g.name || 'Unknown Group'}</span>
-                                <span class="text-xs text-gray-500 font-mono italic">ID: ${g.id}</span>
-                                <span class="text-[10px] text-gray-400 block mt-1">Added by: ${g.by || 'Admin'}</span>
+                                <span class="font-bold text-purple-300 block truncate text-base">${g.name || 'Unknown Group'}</span>
+                                <span class="text-[11px] text-gray-500 font-mono italic block">ID: ${g.id}</span>
+                                <div class="mt-2 space-y-1">
+                                    <span class="badge text-blue-300">👤 បញ្ចូលដោយ: ${g.by || 'Admin'}</span>
+                                    <span class="badge text-green-400">📅 ថ្ងៃចូល: ${dateDisplay}</span>
+                                </div>
                             </div>
-                            <button onclick="leaveGroup('${g.id}', '${g.name}')" class="bg-red-900 bg-opacity-30 text-red-400 border border-red-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-800 hover:text-white transition-all">
+                            <button onclick="leaveGroup('${g.id}', '${g.name}')" class="bg-red-900 bg-opacity-40 text-red-400 border border-red-800 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 hover:text-white transition-all">
                                 Leave
                             </button>
                         </div>
@@ -174,7 +177,7 @@
             });
         }
 
-        // ចាប់ផ្តើមបង្ហាញដំបូង
+        // បង្ហាញដំបូង
         render();
     </script>
 </body>
