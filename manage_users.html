@@ -3,53 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>គ្រប់គ្រងអ្នកប្រើប្រាស់</title>
+    <title>គ្រប់គ្រងគណនី</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; }
         .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .pending-border { border-left: 4px solid #f59e0b; } /* ពណ៌លឿងសម្រាប់អ្នកស្នើសុំថ្មី */
     </style>
 </head>
-<body class="p-4">
-    <h2 class="text-xl font-bold mb-4 text-center text-blue-400">👥 គ្រប់គ្រងអ្នកប្រើប្រាស់</h2>
+<body class="p-4 pb-24">
+    <h2 class="text-xl font-bold mb-4 text-center text-blue-400">👥 គ្រប់គ្រងគណនី (All-in-One)</h2>
+    
     <div id="usersList" class="space-y-4"></div>
-    <button onclick="saveData()" class="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all">
-        💾 រក្សាទុកការផ្លាស់ប្តូរ
-    </button>
+
+    <div class="fixed bottom-0 left-0 right-0 p-4 bg-gray-900 bg-opacity-90 backdrop-blur-md flex space-x-2">
+        <button onclick="exportReport()" class="w-1/3 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm">
+            📊 របាយការណ៍
+        </button>
+        <button onclick="saveData()" class="w-2/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all">
+            💾 រក្សាទុក
+        </button>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // ទាញយកទិន្នន័យពី URL ដែល Bot បានផ្ញើមក
         const urlParams = new URLSearchParams(window.location.search);
         let users = [];
         try {
             users = JSON.parse(decodeURIComponent(urlParams.get('data') || '[]'));
+            // តម្រៀបអ្នកដែល Pending ឱ្យមកនៅខាងលើគេ
+            users.sort((a, b) => (a.status === 'pending' ? -1 : (b.status === 'pending' ? 1 : 0)));
         } catch(e) { console.error("Error parsing users data"); }
 
         const usersListDiv = document.getElementById('usersList');
 
-        // បង្ហាញអ្នកប្រើប្រាស់
         function renderUsers() {
             usersListDiv.innerHTML = '';
             users.forEach((u, index) => {
                 const isApproved = u.status === 'approved' ? 'selected' : '';
                 const isPending = u.status === 'pending' ? 'selected' : '';
                 const isRejected = u.status === 'rejected' ? 'selected' : '';
+                
+                // បើ Pending ដាក់គែមពណ៌លឿងឱ្យចំណាំ
+                const borderClass = u.status === 'pending' ? 'pending-border' : '';
 
                 const card = `
-                <div class="glass-card p-4 rounded-xl">
+                <div class="glass-card p-4 rounded-xl ${borderClass}">
                     <div class="flex justify-between items-center mb-3">
-                        <span class="font-bold text-lg">${u.name ? '@'+u.name : 'ID: '+u.id}</span>
+                        <div>
+                            <span class="font-bold text-lg block">${u.name ? '@'+u.name : 'ID: '+u.id}</span>
+                            ${u.status === 'pending' ? '<span class="text-xs text-yellow-400">🔔 សំណើថ្មី</span>' : ''}
+                        </div>
                         <select onchange="updateStatus(${index}, this.value)" class="bg-gray-800 text-sm rounded p-1 border border-gray-600 outline-none">
                             <option value="approved" ${isApproved}>✅ អនុញ្ញាត</option>
                             <option value="pending" ${isPending}>⏳ រង់ចាំ</option>
                             <option value="rejected" ${isRejected}>❌ បដិសេធ</option>
                         </select>
                     </div>
-                    <div class="flex space-x-4 text-sm">
+                    <div class="flex space-x-4 text-sm mt-2">
                         <label class="flex items-center space-x-1 cursor-pointer">
                             <input type="checkbox" onchange="updatePerm(${index}, 'search', this.checked)" ${u.search ? 'checked' : ''} class="w-4 h-4 text-blue-500">
                             <span>ស្វែងរក</span>
@@ -71,9 +85,13 @@
         function updateStatus(index, val) { users[index].status = val; }
         function updatePerm(index, type, val) { users[index][type] = val ? 1 : 0; }
 
-        // ផ្ញើទិន្នន័យត្រឡប់ទៅ Bot វិញ
         function saveData() {
             tg.sendData(JSON.stringify({ action: 'update_users_miniapp', data: users }));
+            tg.close();
+        }
+
+        function exportReport() {
+            tg.sendData(JSON.stringify({ action: 'export_users_report' }));
             tg.close();
         }
 
