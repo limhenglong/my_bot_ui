@@ -1,51 +1,158 @@
-<div class="flex mb-4 bg-gray-800 rounded-xl p-1">
-    <button onclick="switchTab('users')" id="btnUsers" class="w-1/2 py-2 rounded-lg bg-blue-600">Users</button>
-    <button onclick="switchTab('groups')" id="btnGroups" class="w-1/2 py-2 rounded-lg">Groups</button>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ប្រព័ន្ធគ្រប់គ្រង SRP11</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; min-height: 100vh; }
+        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .pending-border { border-left: 4px solid #f59e0b; }
+        .group-border { border-left: 4px solid #a855f7; }
+        .search-box { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px); }
+        .search-box:focus { border-color: #3b82f6; outline: none; }
+        .tab-active { background: #2563eb; color: white; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39); }
+    </style>
+</head>
+<body class="p-4 pb-28">
+    <h2 class="text-xl font-bold mb-4 text-center text-blue-400">🛡️ មជ្ឈមណ្ឌលគ្រប់គ្រង SRP11</h2>
+    
+    <div class="mb-4">
+        <input type="text" id="searchInput" onkeyup="filterContent()" placeholder="🔍 ស្វែងរកឈ្មោះ ឬ ID..." 
+               class="w-full search-box text-white rounded-xl p-3 transition-colors placeholder-gray-400">
+    </div>
 
-<div id="groupsList" class="hidden space-y-4"></div>
+    <div class="flex mb-6 bg-gray-800 bg-opacity-50 rounded-xl p-1 border border-gray-700">
+        <button onclick="switchTab('users')" id="tabUsers" class="w-1/2 py-2.5 rounded-lg transition-all tab-active">👤 អ្នកប្រើប្រាស់</button>
+        <button onclick="switchTab('groups')" id="tabGroups" class="w-1/2 py-2.5 rounded-lg transition-all text-gray-400">Groups</button>
+    </div>
 
-<script>
-    function switchTab(tab) {
-        if(tab === 'users') {
-            document.getElementById('usersList').classList.remove('hidden');
-            document.getElementById('groupsList').classList.add('hidden');
-            document.getElementById('btnUsers').classList.add('bg-blue-600');
-            document.getElementById('btnGroups').classList.remove('bg-blue-600');
-        } else {
-            document.getElementById('usersList').classList.add('hidden');
-            document.getElementById('groupsList').classList.remove('hidden');
-            document.getElementById('btnGroups').classList.add('bg-blue-600');
-            document.getElementById('btnUsers').classList.remove('bg-blue-600');
-            renderGroups();
+    <div id="usersContainer" class="space-y-4"></div>
+
+    <div id="groupsContainer" class="hidden space-y-4"></div>
+
+    <div class="fixed bottom-0 left-0 right-0 p-4 bg-gray-900 bg-opacity-90 backdrop-blur-md flex space-x-2 border-t border-gray-800">
+        <button onclick="exportReport()" class="w-1/3 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm">
+            📊 របាយការណ៍
+        </button>
+        <button onclick="saveData()" class="w-2/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all">
+            💾 រក្សាទុកការកែប្រែ
+        </button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // ទាញទិន្នន័យពី URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let rawData = {};
+        try {
+            rawData = JSON.parse(decodeURIComponent(urlParams.get('data') || '{}'));
+        } catch(e) { console.error("Data error"); }
+
+        let users = rawData.users || [];
+        let groups = rawData.groups || [];
+        let currentTab = 'users';
+
+        // តម្រៀបអ្នក Pending ឡើងលើ
+        users.sort((a, b) => (a.status === 'pending' ? -1 : 1));
+
+        function switchTab(tab) {
+            currentTab = tab;
+            const uCon = document.getElementById('usersContainer');
+            const gCon = document.getElementById('groupsContainer');
+            const tU = document.getElementById('tabUsers');
+            const tG = document.getElementById('tabGroups');
+
+            if(tab === 'users') {
+                uCon.classList.remove('hidden');
+                gCon.classList.add('hidden');
+                tU.classList.add('tab-active'); tU.classList.remove('text-gray-400');
+                tG.classList.remove('tab-active'); tG.classList.add('text-gray-400');
+            } else {
+                uCon.classList.add('hidden');
+                gCon.classList.remove('hidden');
+                tG.classList.add('tab-active'); tG.classList.remove('text-gray-400');
+                tU.classList.remove('tab-active'); tU.classList.add('text-gray-400');
+            }
+            render();
         }
-    }
 
-    function renderGroups() {
-        // បញ្ជី Group ត្រូវបាញ់មកតាម URL ដូច Users ដែរ
-        const groupsListDiv = document.getElementById('groupsList');
-        groupsListDiv.innerHTML = '';
-        
-        groups.forEach((g) => {
-            const card = `
-            <div class="glass-card p-4 rounded-xl border-l-4 border-purple-500">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <span class="font-bold block text-purple-300">${g.name}</span>
-                        <span class="text-xs text-gray-400 font-mono">ID: ${g.id}</span>
-                    </div>
-                    <button onclick="leaveGroup('${g.id}')" class="bg-red-900 text-red-200 px-3 py-1 rounded-lg text-xs border border-red-700">
-                        Leave
-                    </button>
-                </div>
-            </div>`;
-            groupsListDiv.innerHTML += card;
-        });
-    }
+        function render(filter = '') {
+            const f = filter.toLowerCase();
+            const uCon = document.getElementById('usersContainer');
+            const gCon = document.getElementById('groupsContainer');
 
-    function leaveGroup(id) {
-        if(confirm('តើបងពិតជាចង់ឱ្យ Bot ចាកចេញពី Group នេះមែនទេ?')) {
-            tg.sendData(JSON.stringify({ action: 'leave_group_miniapp', group_id: id }));
+            if(currentTab === 'users') {
+                uCon.innerHTML = '';
+                users.filter(u => `${u.name}${u.id}`.toLowerCase().includes(f)).forEach((u, i) => {
+                    const card = `
+                    <div class="glass-card p-4 rounded-xl ${u.status === 'pending' ? 'pending-border' : ''}">
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="truncate pr-2">
+                                <span class="font-bold text-blue-200 block truncate">${u.name ? '@'+u.name : 'ID: '+u.id}</span>
+                                <span class="text-xs text-gray-500 font-mono italic">ID: ${u.id}</span>
+                            </div>
+                            <select onchange="updateStatus(${i}, this.value)" class="bg-gray-800 text-sm rounded p-2 border border-gray-600 outline-none">
+                                <option value="approved" ${u.status==='approved'?'selected':''}>✅ Allow</option>
+                                <option value="pending" ${u.status==='pending'?'selected':''}>⏳ Wait</option>
+                                <option value="rejected" ${u.status==='rejected'?'selected':''}>❌ Block</option>
+                            </select>
+                        </div>
+                        <div class="flex space-x-4 text-xs pt-2 border-t border-gray-700">
+                            <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'search',this.checked)" ${u.search?'checked':''} class="w-4 h-4"> <span>ស្វែងរក</span></label>
+                            <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'report',this.checked)" ${u.report?'checked':''} class="w-4 h-4"> <span>របាយការណ៍</span></label>
+                            <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'input',this.checked)" ${u.input?'checked':''} class="w-4 h-4"> <span>បញ្ចូល</span></label>
+                        </div>
+                    </div>`;
+                    uCon.innerHTML += card;
+                });
+            } else {
+                gCon.innerHTML = '';
+                groups.filter(g => `${g.name}${g.id}`.toLowerCase().includes(f)).forEach((g) => {
+                    const card = `
+                    <div class="glass-card p-4 rounded-xl group-border">
+                        <div class="flex justify-between items-center">
+                            <div class="truncate">
+                                <span class="font-bold text-purple-300 block truncate">${g.name}</span>
+                                <span class="text-xs text-gray-500 font-mono">ID: ${g.id}</span>
+                                <span class="text-[10px] text-gray-400 block mt-1">Added by: ${g.by}</span>
+                            </div>
+                            <button onclick="leaveGroup('${g.id}', '${g.name}')" class="bg-red-900 bg-opacity-30 text-red-400 border border-red-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-800 transition-all">
+                                Leave
+                            </button>
+                        </div>
+                    </div>`;
+                    gCon.innerHTML += card;
+                });
+            }
         }
-    }
-</script>
+
+        function filterContent() { render(document.getElementById('searchInput').value); }
+        function updateStatus(i, v) { users[i].status = v; }
+        function upPerm(i, t, v) { users[i][t] = v ? 1 : 0; }
+
+        function saveData() {
+            tg.sendData(JSON.stringify({ action: 'update_users_miniapp', data: users }));
+            tg.close();
+        }
+
+        function exportReport() {
+            tg.sendData(JSON.stringify({ action: 'export_users_report' }));
+            tg.close();
+        }
+
+        function leaveGroup(id, name) {
+            if(confirm(`តើបងពិតជាចង់ឱ្យ Bot ចាកចេញពី Group "${name}" មែនទេ?`)) {
+                tg.sendData(JSON.stringify({ action: 'leave_group_miniapp', group_id: id, group_name: name }));
+                tg.close();
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
