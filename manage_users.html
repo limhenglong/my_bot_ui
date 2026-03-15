@@ -33,12 +33,8 @@
     <div id="groupsContainer" class="hidden space-y-4"></div>
 
     <div class="fixed bottom-0 left-0 right-0 p-4 bg-gray-900 bg-opacity-90 backdrop-blur-md flex space-x-2 border-t border-gray-800 z-50">
-        <button onclick="exportReport()" class="w-1/3 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-xs">
-            📊 របាយការណ៍
-        </button>
-        <button onclick="saveData()" class="w-2/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all">
-            💾 រក្សាទុកការកែប្រែ
-        </button>
+        <button onclick="exportReport()" class="w-1/3 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-xs text-center">📊 របាយការណ៍</button>
+        <button onclick="saveData()" class="w-2/3 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-center">💾 រក្សាទុកការកែប្រែ</button>
     </div>
 
     <script>
@@ -62,22 +58,10 @@
 
         function switchTab(tab) {
             currentTab = tab;
-            const uCon = document.getElementById('usersContainer');
-            const gCon = document.getElementById('groupsContainer');
-            const tU = document.getElementById('tabUsers');
-            const tG = document.getElementById('tabGroups');
-
-            if(tab === 'users') {
-                uCon.classList.remove('hidden');
-                gCon.classList.add('hidden');
-                tU.classList.add('tab-active'); tU.classList.remove('text-gray-400');
-                tG.classList.remove('tab-active'); tG.classList.add('text-gray-400');
-            } else {
-                uCon.classList.add('hidden');
-                gCon.classList.remove('hidden');
-                tG.classList.add('tab-active'); tG.classList.remove('text-gray-400');
-                tU.classList.remove('tab-active'); tU.classList.add('text-gray-400');
-            }
+            document.getElementById('usersContainer').classList.toggle('hidden', tab !== 'users');
+            document.getElementById('groupsContainer').classList.toggle('hidden', tab !== 'groups');
+            document.getElementById('tabUsers').className = tab === 'users' ? 'w-1/2 py-2.5 rounded-lg transition-all tab-active font-bold' : 'w-1/2 py-2.5 rounded-lg transition-all text-gray-400 font-bold';
+            document.getElementById('tabGroups').className = tab === 'groups' ? 'w-1/2 py-2.5 rounded-lg transition-all tab-active font-bold' : 'w-1/2 py-2.5 rounded-lg transition-all text-gray-400 font-bold';
             render();
         }
 
@@ -89,52 +73,48 @@
             if(currentTab === 'users') {
                 uCon.innerHTML = '';
                 users.filter(u => `${u.name}${u.id}`.toLowerCase().includes(f)).forEach((u, i) => {
-                    const card = `
+                    uCon.innerHTML += `
                     <div class="glass-card p-4 rounded-xl ${u.status === 'pending' ? 'pending-border' : ''} mb-3">
-                        <div class="flex justify-between items-center mb-3">
-                            <div class="truncate pr-2">
-                                <span class="font-bold text-blue-200 block truncate text-base">${u.name ? '@'+u.name : 'ID: '+u.id}</span>
-                                <span class="text-[11px] text-gray-500 font-mono">ID: ${u.id}</span>
+                        <div class="flex justify-between items-center mb-3 gap-2">
+                            <div class="min-w-0 overflow-visible">
+                                <span class="font-bold text-blue-200 block text-base">${u.name ? '@'+u.name : 'ID: '+u.id}</span>
+                                <span class="text-[11px] text-gray-500 font-mono italic">ID: ${u.id}</span>
                             </div>
-                            <select onchange="updateStatus(${i}, this.value)" class="bg-gray-800 text-xs rounded p-2 border border-gray-600">
+                            <select onchange="updateStatus(${i}, this.value)" class="bg-gray-800 text-xs rounded p-2 border border-gray-600 outline-none shrink-0">
                                 <option value="approved" ${u.status==='approved'?'selected':''}>✅ Allow</option>
                                 <option value="pending" ${u.status==='pending'?'selected':''}>⏳ Wait</option>
                                 <option value="rejected" ${u.status==='rejected'?'selected':''}>❌ Block</option>
                             </select>
                         </div>
-                        <div class="flex space-x-3 text-[11px] pt-3 border-t border-gray-700">
+                        <div class="flex flex-wrap gap-4 text-[11px] pt-3 border-t border-gray-700">
                             <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'search',this.checked)" ${u.search?'checked':''} class="w-4 h-4 rounded"> <span>ស្វែងរក</span></label>
                             <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'report',this.checked)" ${u.report?'checked':''} class="w-4 h-4 rounded"> <span>របាយការណ៍</span></label>
                             <label class="flex items-center space-x-1"><input type="checkbox" onchange="upPerm(${i},'input',this.checked)" ${u.input?'checked':''} class="w-4 h-4 rounded"> <span>បញ្ចូល</span></label>
                         </div>
                     </div>`;
-                    uCon.innerHTML += card;
                 });
             } else {
                 gCon.innerHTML = '';
                 groups.filter(g => `${g.name}${g.id}`.toLowerCase().includes(f)).forEach((g) => {
                     const dateDisplay = g.date ? g.date.split(' ')[0] : 'មិនស្គាល់';
-                    const card = `
+                    gCon.innerHTML += `
                     <div class="glass-card p-4 rounded-xl group-border mb-3">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1 truncate pr-2">
-                                <span class="font-bold text-purple-300 block truncate text-base">${g.name || 'Unknown Group'}</span>
-                                <span class="text-[11px] text-gray-500 font-mono italic block mb-2">ID: ${g.id}</span>
-                                <div class="flex flex-wrap gap-2 mt-2">
-                                    <span class="bg-blue-900 bg-opacity-30 text-blue-300 text-[10px] px-2 py-1 rounded whitespace-nowrap">
-                                        👤 ${g.by || 'Admin'}
-                                    </span>
-                                    <span class="bg-green-900 bg-opacity-30 text-green-400 text-[10px] px-2 py-1 rounded whitespace-nowrap">
-                                        📅 ${dateDisplay}
-                                    </span>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="min-w-0 overflow-visible">
+                                    <span class="font-bold text-purple-300 block text-base break-words">${g.name || 'Unknown Group'}</span>
+                                    <span class="text-[11px] text-gray-500 font-mono italic">ID: ${g.id}</span>
                                 </div>
+                                <button onclick="leaveGroup('${g.id}', '${g.name}')" class="bg-red-900 bg-opacity-40 text-red-400 border border-red-800 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0">
+                                    Leave
+                                </button>
                             </div>
-                            <button onclick="leaveGroup('${g.id}', '${g.name}')" class="bg-red-900 bg-opacity-40 text-red-400 border border-red-800 px-4 py-2 rounded-xl text-xs font-bold active:bg-red-700">
-                                Leave
-                            </button>
+                            <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-800 border-opacity-50">
+                                <span class="bg-blue-900 bg-opacity-30 text-blue-300 text-[10px] px-2 py-1 rounded inline-flex items-center">👤 ${g.by || 'Admin'}</span>
+                                <span class="bg-green-900 bg-opacity-30 text-green-400 text-[10px] px-2 py-1 rounded inline-flex items-center">📅 ${dateDisplay}</span>
+                            </div>
                         </div>
                     </div>`;
-                    gCon.innerHTML += card;
                 });
             }
         }
